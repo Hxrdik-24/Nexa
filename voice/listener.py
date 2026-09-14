@@ -13,7 +13,7 @@ def listen():
 
             audio = r.listen(
                 source,
-                timeout=5,
+                timeout=10,
                 phrase_time_limit=10
             )
 

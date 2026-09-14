@@ -1,5 +1,6 @@
 from actions import informations , applications , browser
-
+from brain.llm import apiprocess
+from core.assistant import speak
 class NormalMode:
 
     def open_chrome(self):
@@ -33,4 +34,5 @@ class NormalMode:
         browser.openFacebook()
 
     def default(self, command):
-        print(f"Normal Mode: I don't know: {command}")
+        api_response = apiprocess(command)
+        speak(api_response)

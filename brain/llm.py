@@ -1,85 +1,84 @@
 import datetime
 import os
-import dotenv
-import requests
+import time
 
-dotenv.load_dotenv()
+from dotenv import load_dotenv
+from google import genai
+from google.genai import types
+
+load_dotenv()
+
+# Gemini client
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Retry configuration
+MAX_RETRIES = 3
+INITIAL_RETRY_DELAY = 1  # seconds
+MAX_RETRY_DELAY = 8      # seconds
 
 
 def apiprocess(command):
-  # Command length check
-  if len(command) > 25:
-    return "Error: Command too long! Please keep it under 25 characters."
+    # Command length check
+    if len(command) > 50:
+        return "Error: Command too long! Please keep it under 25 characters."
 
-  invoke_url = "https://integrate.api.nvidia.com/v1/chat/completions"
-  stream = False
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-  headers = {
-      "Authorization": f"Bearer {os.getenv('AI_API')}",
-      "Accept": "text/event-stream" if stream else "application/json",
-      "Content-Type": "application/json",
-  }
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            # Sahi model aur method call
+            response = gemini_client.models.generate_content(
+                model="gemini-3.5-flash",
+                contents=f"Answer strictly in 1-2 short sentences: {command}",
+            )
 
-  payload = {
-      "messages": [{"role": "user", "content": command}],
-      "model": "google/gemma-4-31b-it",
-      "chat_template_kwargs": {"enable_thinking": True},
-      "max_tokens": 512,
-      "stream": stream,
-      "temperature": 1,
-      "top_p": 0.95,
-  }
+            reply_text = response.text.strip()
 
-  current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Log successful request
+            log_entry = (
+                f"[{current_time}] SUCCESS | Command: '{command}'\n"
+                f"   - Attempt: {attempt}\n"
+                f"   - Response: {reply_text}\n"
+                "--------------------------------------------------\n"
+            )
 
-  try:
-    response = requests.post(
-        invoke_url, headers=headers, json=payload, stream=stream
-    )
+            with open("brain/logs.txt", "a", encoding="utf-8") as f:
+                f.write(log_entry)
 
-    
-    if response.status_code != 200:
-      error_msg = f"[{current_time}] API ERROR {response.status_code}: {response.text}\n"
-      with open("logs.txt", "a", encoding="utf-8") as f:
-        f.write(error_msg)
-      return f"API Error {response.status_code}"
+            return reply_text
 
-    data = response.json()
+        except Exception as e:
+            # Last attempt failed
+            if attempt == MAX_RETRIES:
+                error_log = (
+                    f"[{current_time}] API FAILED\n"
+                    f"   - Command: '{command}'\n"
+                    f"   - Attempts: {MAX_RETRIES}\n"
+                    f"   - Error: {str(e)}\n"
+                    "--------------------------------------------------\n"
+                )
 
-    
-    usage = data.get("usage", {})
-    prompt_tokens = usage.get("prompt_tokens", 0)
-    completion_tokens = usage.get("completion_tokens", 0)
-    total_tokens = usage.get("total_tokens", 0)
-    reasoning_tokens = usage.get("reasoning_tokens", 0)
-    cached_tokens = (
-        usage.get("prompt_tokens_details", {}).get("cached_tokens", 0)
-    )
+                with open("brain/logs.txt", "a", encoding="utf-8") as f:
+                    f.write(error_log)
 
-    
-    log_entry = (
-        f"[{current_time}] SUCCESS | Command: '{command}'\n"
-        f"   - Prompt Tokens: {prompt_tokens} (Cached: {cached_tokens})\n"
-        f"   - Completion Tokens: {completion_tokens}\n"
-        f"   - Reasoning Tokens: {reasoning_tokens}\n"
-        f"   - Total Tokens Used: {total_tokens}\n"
-        "--------------------------------------------------\n"
-    )
+                return "Error: Gemini API request failed after multiple retries."
 
-    with open("logs.txt", "a", encoding="utf-8") as f:
-      f.write(log_entry)
+            # Exponential backoff
+            retry_delay = min(
+                INITIAL_RETRY_DELAY * (2 ** (attempt - 1)),
+                MAX_RETRY_DELAY,
+            )
 
+            retry_log = (
+                f"[{current_time}] RETRY\n"
+                f"   - Attempt: {attempt}/{MAX_RETRIES}\n"
+                f"   - Retrying in: {retry_delay}s\n"
+                f"   - Error: {str(e)}\n"
+            )
 
-    assistant_content = (
-        data.get("choices", [{}])[0].get("message", {}).get("content", "")
-    )
-    return assistant_content
+            with open("logs.txt", "a", encoding="utf-8") as f:
+                f.write(retry_log)
 
-  except Exception as e:
-    error_log = f"[{current_time}] EXCEPTION: {str(e)}\n"
-    with open("logs.txt", "a", encoding="utf-8") as f:
-      f.write(error_log)
-    return f"Error: {e}"
+            time.sleep(retry_delay)
 
-
-
+    return "Error: Unable to process request."
