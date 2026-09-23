@@ -42,7 +42,7 @@ def apiprocess(command):
                 "--------------------------------------------------\n"
             )
 
-            with open("brain/logs.txt", "a", encoding="utf-8") as f:
+            with open("data/logs.txt", "a", encoding="utf-8") as f:
                 f.write(log_entry)
 
             return reply_text
@@ -58,7 +58,7 @@ def apiprocess(command):
                     "--------------------------------------------------\n"
                 )
 
-                with open("brain/logs.txt", "a", encoding="utf-8") as f:
+                with open("data/logs.txt", "a", encoding="utf-8") as f:
                     f.write(error_log)
 
                 return "Error: Gemini API request failed after multiple retries."
@@ -76,7 +76,7 @@ def apiprocess(command):
                 f"   - Error: {str(e)}\n"
             )
 
-            with open("logs.txt", "a", encoding="utf-8") as f:
+            with open("data/logs.txt", "a", encoding="utf-8") as f:
                 f.write(retry_log)
 
             time.sleep(retry_delay)

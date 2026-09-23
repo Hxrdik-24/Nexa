@@ -1,4 +1,5 @@
 class NexaAgentic:
-    def login_page(self):
-        print("making a log in page !")
-
+    def default(self, command):
+            print(f"Agentic Mode is in working process  ")
+            print(f"Be Updated for new features \n On GitHub :- Hxrdik-24 ")
+            return super().default(command)

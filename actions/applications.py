@@ -3,7 +3,7 @@ import time
 import pyautogui as p
 
 def open_chrome():
-    speak("opening chroe ...")
+    speak("opening chrome ...")
     time.sleep(1)
     p.press('win')
     time.sleep(1)

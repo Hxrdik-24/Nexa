@@ -26,19 +26,22 @@ class NexaAssistant:
     def switchMode(self):
         speak("Please tell the mode name ")
         command = listen()
+        if not command:
+            speak("No command received. Please try again.")
+            return False
         command = command.lower()
 
-        if "switch to mode 1" in command or "normal mode" in command:
+        if "s1" in command or "normal mode" in command:
             self.current_mode = 1
             self.modeName = "Normal 🟢"
             speak("Switched to Normal Assistant Mode.")
 
-        elif "switch to mode 2" in command or "english learning" in command:
+        elif "s2" in command or "english learning" in command:
             self.current_mode = 2
             self.modeName = "English Learning Mode 🔵"
             speak("Switched to English Learning Mode.")
 
-        elif "switch to mode 3" in command or "agentic mode" in command:
+        elif "s3" in command or "agentic mode" in command:
             self.current_mode = 3
             self.modeName = "Agentic Mode 🔴"
             speak("Switched to Agentic Mode.")
@@ -47,9 +50,9 @@ class NexaAssistant:
             print('please tell the mode name ')
             return False
 
-        print("|-------------------------------------|")
-        print(f"| Current Mode  |    {self.modeName}  |")
-        print("|-------------------------------------|")
+        print("|---------------------------------------------------------------------|")
+        print(f"| Current Mode  |    {self.modeName}                                 |")
+        print("|---------------------------------------------------------------------|")
 
         return True
 
@@ -65,6 +68,9 @@ class NexaAssistant:
             if "change mode" in command.lower():
                 self.switchMode()      
                 continue  
+            if command.lower() == "exit":
+                speak("Exiting Nexa Assistant. Goodbye!")
+                break
             command = command.replace(" ", "_")
             mode = self.getModeobj(self.current_mode)
 
