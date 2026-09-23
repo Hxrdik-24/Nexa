@@ -9,7 +9,6 @@ class EnglearnMode(NormalMode):
         print("-----------------------------------------------")
         
         
-
     def default(self, command):
         print(f"English Mode Don't Understand :- {command} ")
         return super().default(command)
